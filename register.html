@@ -57,8 +57,8 @@
           <div class="event">
             <div class="dot"></div>
             <div>
-              <div class="muted" id="eventTitle">Palestra ativa</div>
-              <div class="muted" id="eventDate" style="font-size:12px">Data a definir</div>
+              <div class="muted" id="eventTitle">Carregando…</div>
+              <div class="muted" id="eventDate" style="font-size:12px"></div>
             </div>
           </div>
 
@@ -84,7 +84,7 @@
             </div>
 
             <div class="row">
-              <button class="btn" type="submit">Gerar QRCode</button>
+              <button id="btnSubmit" class="btn" type="submit">Gerar QRCode</button>
               <button class="btn btn-ghost" type="button" id="btnLimpar">Limpar</button>
             </div>
             <div id="msg" class="status"></div>
@@ -101,7 +101,7 @@
           <div id="qrbox" class="qrbox">
             <div class="muted" style="text-align:center">
               Gere o QR preenchendo o formulário ao lado.<br/>
-              <small>O QR inclui: código, nome, e-mail e período.</small>
+              <small>O QR inclui: <b>email|codigo</b>.</small>
             </div>
           </div>
           <div class="row" style="margin-top:12px">
@@ -115,15 +115,19 @@
     <footer>© Estudo Colgate — protótipo estático</footer>
   </div>
 
-  <!-- ✅ Lib estável para browser -->
-   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-   <script src="integration.js"></script>
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <!-- opcional: seu integration.js; não é obrigatório aqui -->
+  <!-- <script src="integration.js"></script> -->
 
   <script>
+    // 🔗 URL da sua API (Apps Script) — COLE AQUI a URL /exec
+    const API = "https://script.google.com/macros/s/AKfycbwffjumMygF1kzzbOiV3JwMnBLDjQN1tTwayUdEFXc3rpy6UyFBiccFsAt19W10g9mC1Q/exec";  // ex.: "https://script.google.com/macros/s/AKfycbx.../exec"
+
     // lê código da URL
     const qs = new URLSearchParams(location.search);
-    const codigo = (qs.get('c') || '').trim() || 'SEM-CODIGO';
-    document.getElementById('pill').textContent = 'Código: ' + codigo;
+    const codigo = (qs.get('c') || '').trim();
+    document.getElementById('pill').textContent = 'Código: ' + (codigo || '—');
 
     const form = document.getElementById('form');
     const msg = document.getElementById('msg');
@@ -131,21 +135,71 @@
     const btnBaixar = document.getElementById('btnBaixar');
     const btnNovo = document.getElementById('btnNovo');
     const btnLimpar = document.getElementById('btnLimpar');
+    const btnSubmit = document.getElementById('btnSubmit');
     let lastPNG = null;
 
+    // 🔸 integra com a planilha: busca palestra e preenche título/data
+    async function carregarPalestra() {
+      const titleEl = document.getElementById('eventTitle');
+      const dateEl  = document.getElementById('eventDate');
+
+      if (!codigo) {
+        titleEl.textContent = 'Código não informado';
+        dateEl.textContent = '';
+        btnSubmit.disabled = true;
+        msg.innerHTML = '<span class="err">Inclua ?c=CODIGO na URL.</span>';
+        return;
+      }
+
+      try {
+        const r = await fetch(`${API}?codigo=${encodeURIComponent(codigo)}`);
+        const res = await r.json();
+
+        if (!res.ok) {
+          titleEl.textContent = 'Palestra não encontrada';
+          dateEl.textContent = '';
+          btnSubmit.disabled = true;
+          msg.innerHTML = '<span class="err">Código inválido na planilha.</span>';
+          return;
+        }
+
+        const p = res.palestra;
+        titleEl.textContent = p.descricao || 'Palestra';
+        dateEl.textContent  = p.dataBR ? `Data: ${p.dataBR}` : '';
+
+        if (!p.ativo) {
+          btnSubmit.disabled = true;
+          msg.innerHTML = '<span class="err">Palestra inativa — geração de QR bloqueada.</span>';
+        } else {
+          btnSubmit.disabled = false;
+          msg.innerHTML = '<span class="ok">Palestra ativa — você pode gerar o QR.</span>';
+        }
+      } catch (err) {
+        console.error(err);
+        titleEl.textContent = 'Erro ao consultar palestra';
+        dateEl.textContent  = '';
+        btnSubmit.disabled = true;
+        msg.innerHTML = '<span class="err">Falha ao acessar a API.</span>';
+      }
+    }
+    carregarPalestra();
+
+    // geração do QR (mantido do seu template)
     form.addEventListener('submit', ev=>{
       ev.preventDefault();
+      if (btnSubmit.disabled) return;
+
       qrbox.innerHTML = '';
       const email = document.getElementById('email').value.trim();
       const nome = document.getElementById('nome').value.trim();
       const periodo = document.getElementById('periodo').value;
 
       if(!email || !codigo){
-        msg.innerHTML = '<span class="err">Preencha o e-mail e código válido.</span>';
+        msg.innerHTML = '<span class="err">Preencha o e-mail e use um código válido.</span>';
         return;
       }
 
-      const conteudo = `${email}|${codigo}`;
+      const conteudo = `${email}|${codigo}`; // 🔐 padrão combinado
       const container = document.createElement('div');
       qrbox.appendChild(container);
 
