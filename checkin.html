@@ -144,150 +144,141 @@
 
   <!-- jsQR -->
   <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
-  <script src="integration.js"></script>
   <script>
-    // Código da URL (?c=...)
-    const qs = new URLSearchParams(location.search);
-    const codigoUrl = (qs.get('c') || '').trim() || 'SEM-CODIGO';
-    document.getElementById('pill').textContent = 'Código: ' + codigoUrl;
+  // 🔗 URL do Web App (Apps Script) — COLE A SUA /exec
+  const API = "https://SEU_EXEC_ID/exec";
 
-    // Câmera
-    const video = document.getElementById('video');
-    const startBtn = document.getElementById('start');
-    const stopBtn = document.getElementById('stop');
-    const statusEl = document.getElementById('status');
-    const cameraCard = document.getElementById('cameraCard');
+  // Código da URL (?c=...)
+  const qs = new URLSearchParams(location.search);
+  const codigoUrl = (qs.get('c') || '').trim() || 'SEM-CODIGO';
+  document.getElementById('pill').textContent = 'Código: ' + codigoUrl;
 
-    // Saída
-    const outEmail = document.getElementById('outEmail');
-    const outCodigo = document.getElementById('outCodigo');
+  const video=document.getElementById('video'), startBtn=document.getElementById('start'),
+        stopBtn=document.getElementById('stop'), statusEl=document.getElementById('status');
+  const outEmail=document.getElementById('outEmail'), outCodigo=document.getElementById('outCodigo');
 
-    // Modal
-    const backdrop = document.getElementById('backdrop');
-    const mEmail = document.getElementById('mEmail');
-    const mCodigo = document.getElementById('mCodigo');
-    const mTs = document.getElementById('mTs');
-    const modalBadge = document.getElementById('modalBadge');
-    const btnCancelar = document.getElementById('btnCancelar');
-    const btnConfirmar = document.getElementById('btnConfirmar');
+  // Modal
+  const backdrop = document.getElementById('backdrop');
+  const mEmail = document.getElementById('mEmail');
+  const mCodigo = document.getElementById('mCodigo');
+  const mTs = document.getElementById('mTs');
+  const modalBadge = document.getElementById('modalBadge');
+  const btnCancelar = document.getElementById('btnCancelar');
+  const btnConfirmar = document.getElementById('btnConfirmar');
+  const toast = document.getElementById('toast');
 
-    // Toast
-    const toast = document.getElementById('toast');
+  let stream=null, running=false, animId=null, lastPayload=null;
+  const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d',{willReadFrequently:true});
 
-    let stream=null, running=false, animId=null, lastPayload=null, lastError=null, lastShownAt=0;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently:true });
-
-    function openModal(email, codigo){
-      mEmail.textContent = email || '—';
-      mCodigo.textContent = codigo || '—';
-      mTs.textContent = new Date().toLocaleString();
-      modalBadge.textContent = 'Palestra: ' + (codigo || '—');
-      backdrop.classList.add('show');
-      backdrop.setAttribute('aria-hidden','false');
+  // Valida palestra antes de liberar a câmera
+  (async () => {
+    if (codigoUrl === 'SEM-CODIGO') {
+      statusEl.innerHTML = '<span class="err">Código ausente na URL</span>';
+      startBtn.disabled = true;
+      return;
     }
-    function closeModal(){
-      backdrop.classList.remove('show');
-      backdrop.setAttribute('aria-hidden','true');
+    try {
+      const r = await fetch(`${API}?codigo=${encodeURIComponent(codigoUrl)}`);
+      const res = await r.json();
+      if (!res.ok) throw new Error('Palestra não encontrada');
+      if (!res.palestra.ativo) throw new Error('Palestra inativa');
+      document.getElementById('eventTitle')?.textContent = res.palestra.descricao || 'Palestra';
+      document.getElementById('eventDate')?.textContent  = res.palestra.dataBR ? 'Data: ' + res.palestra.dataBR : '';
+    } catch (e) {
+      statusEl.innerHTML = `<span class="err">${e.message}</span>`;
+      startBtn.disabled = true;
     }
-    function showToast(){
-      toast.classList.add('show');
-      setTimeout(()=>toast.classList.remove('show'), 1800);
-    }
-    function showErrorOnce(key, html){
-      // anti-spam de mensagens a cada ~800ms
-      const now = performance.now();
-      if (lastError === key && now - lastShownAt < 800) return;
-      lastError = key; lastShownAt = now;
-      statusEl.innerHTML = html;
-      cameraCard.classList.remove('shake');
-      void cameraCard.offsetWidth; // reflow p/ reiniciar animação
-      cameraCard.classList.add('shake');
-    }
+  })();
 
-    async function startCam(){
-      try{
-        stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } });
-        video.srcObject = stream; await video.play();
-        running = true; startBtn.disabled = true; stopBtn.disabled = false;
-        statusEl.textContent = 'Câmera ativa…';
-        loop();
-      }catch(e){
-        statusEl.innerHTML = '<span class="err">Erro ao abrir câmera</span>';
-        console.error(e);
-      }
-    }
-    function stopCam(){
-      running = false;
-      if (animId) cancelAnimationFrame(animId);
-      if (stream) stream.getTracks().forEach(t=>t.stop());
-      startBtn.disabled = false; stopBtn.disabled = true;
-      statusEl.textContent = 'Parado.';
-    }
+  async function startCam(){
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      video.srcObject=stream; await video.play(); running=true;
+      startBtn.disabled=true; stopBtn.disabled=false;
+      statusEl.textContent='Câmera ativa…'; loop();
+    }catch(e){statusEl.innerHTML='<span class="err">Erro ao abrir câmera</span>';}
+  }
+  function stopCam(){running=false;if(animId)cancelAnimationFrame(animId);if(stream)stream.getTracks().forEach(t=>t.stop());
+    startBtn.disabled=false;stopBtn.disabled=true;statusEl.textContent='Parado.';}
+  function openModal(email, codigo){
+    mEmail.textContent=email||'—'; mCodigo.textContent=codigo||'—';
+    mTs.textContent=new Date().toLocaleString(); modalBadge.textContent='Palestra: '+(codigo||'—');
+    backdrop.classList.add('show'); backdrop.setAttribute('aria-hidden','false');
+  }
+  function closeModal(){backdrop.classList.remove('show');backdrop.setAttribute('aria-hidden','true');}
+  function showToast(txt='Presença confirmada (simulação)'){
+    toast.textContent = txt; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1800);
+  }
 
-    function loop(){
-      if(!running) return;
-      if(video.readyState === video.HAVE_ENOUGH_DATA){
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const img = ctx.getImageData(0,0,canvas.width,canvas.height);
-        const qr = jsQR(img.data, img.width, img.height, { inversionAttempts:'dontInvert' });
-
-        if(qr && qr.data){
-          const raw = (qr.data || '').trim();
-          // Formato esperado: email|codigo
-          const parts = raw.split('|');
-          if (parts.length < 2 || !parts[0] || !parts[1]) {
-            // Erro de formato
-            showErrorOnce('invalid_format',
-              '<span class="err"><b>Erro: QRCode Invalido</b></span> — <span class="muted">Situação: QrCode com o formato invalido</span>');
-          } else {
-            const email = parts[0];
-            const codigo = parts[1];
-
-            // Salva no painel lateral
-            outEmail.textContent = email;
-            outCodigo.textContent = codigo;
-
-            // Valida se bate com ?c=...
-            if (codigo !== codigoUrl) {
-              showErrorOnce('wrong_code',
-                '<span class="err"><b>Erro: QrCode Palestra nao encontrada</b></span> — <span class="muted">Situação: Está no formato correto porem com o codigo errado</span>');
-            } else {
-              // Válido: abre modal (uma vez por payload)
-              const payload = `${email}|${codigo}`;
-              if (payload !== lastPayload) {
-                lastPayload = payload;
-                statusEl.innerHTML = '<span class="ok">QR detectado</span>';
-                openModal(email, codigo);
-              }
+  function loop(){
+    if(!running)return;
+    if(video.readyState===video.HAVE_ENOUGH_DATA){
+      canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+      ctx.drawImage(video,0,0,canvas.width,canvas.height);
+      const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const qr=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+      if(qr&&qr.data){
+        const parts=(qr.data||'').trim().split('|');
+        if(parts.length<2 || !parts[0] || !parts[1]){
+          statusEl.innerHTML='<span class="err"><b>Erro: QRCode Invalido</b></span> — <span class="muted">Situação: QrCode com o formato invalido</span>';
+        }else{
+          const email=parts[0]; const codigo=parts[1];
+          outEmail.textContent=email; outCodigo.textContent=codigo;
+          if(codigo!==codigoUrl){
+            statusEl.innerHTML='<span class="err"><b>Erro: QrCode Palestra nao encontrada</b></span> — <span class="muted">Situação: Está no formato correto porem com o codigo errado</span>';
+          }else{
+            const payload=`${email}|${codigo}`;
+            if(payload!==lastPayload){
+              lastPayload=payload; statusEl.innerHTML='<span class="ok">QR detectado</span>'; openModal(email,codigo);
             }
           }
         }
       }
-      animId = requestAnimationFrame(loop);
     }
+    animId=requestAnimationFrame(loop);
+  }
 
-    // Eventos do modal
-    btnCancelar.addEventListener('click', ()=>{
+  startBtn.onclick=startCam; stopBtn.onclick=stopCam;
+  backdrop.addEventListener('click',(e)=>{ if(e.target===backdrop) closeModal(); });
+  window.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModal(); });
+
+  // 🔥 Confirmar presença: POST action=presenca
+  btnConfirmar.addEventListener('click', async ()=>{
+    btnConfirmar.disabled = true;
+    try{
+      const email = mEmail.textContent.trim();
+      const body = new URLSearchParams({
+        action:'presenca',
+        codigoPalestra: codigoUrl,
+        email
+      }).toString();
+
+      const resp = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+      });
+      const data = await resp.json();
+
+      if (!data.ok) {
+        showToast('Erro: ' + (data.error || 'falha ao confirmar'));
+      } else if (data.status === 'ja_confirmada') {
+        showToast('Presença já confirmada anteriormente ✓');
+      } else {
+        showToast('Presença confirmada ✓');
+      }
+    } catch (e) {
+      showToast('Erro ao confirmar presença');
+      console.error(e);
+    } finally {
+      btnConfirmar.disabled = false;
       closeModal();
-      // continua lendo próximos QRs
-    });
-    btnConfirmar.addEventListener('click', ()=>{
-      closeModal();
-      showToast(); // simulação (sem integração)
-      // se quiser pausar após confirmar: descomente a linha abaixo
+      // opcional: parar a câmera após confirmar
       // stopCam();
-    });
+    }
+  });
 
-    // Fechar modal clicando fora ou com ESC
-    backdrop.addEventListener('click', (e)=>{ if(e.target === backdrop) closeModal(); });
-    window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
-
-    // Botões da câmera
-    startBtn.onclick = startCam;
-    stopBtn.onclick = stopCam;
-  </script>
+  btnCancelar.addEventListener('click', ()=> closeModal());
+</script>
 </body>
 </html>
