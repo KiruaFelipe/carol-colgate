@@ -120,14 +120,14 @@
   <!-- opcional: seu integration.js; não é obrigatório aqui -->
   <!-- <script src="integration.js"></script> -->
 
-  <script>
-    // 🔗 URL da sua API (Apps Script) — COLE AQUI a URL /exec
-    const API = "https://script.google.com/macros/s/AKfycbwffjumMygF1kzzbOiV3JwMnBLDjQN1tTwayUdEFXc3rpy6UyFBiccFsAt19W10g9mC1Q/exec";  // ex.: "https://script.google.com/macros/s/AKfycbx.../exec"
+   <script>
+    // 🔗 URL do Web App (Apps Script) — COLE A SUA /exec
+    const API = "https://script.google.com/macros/s/AKfycbxwDkaWnwwtvvtLw6jFzGJorcAS565X2-efzFpGm_CZVLfc6zZ2txQY8Dh8N4MXlcwSZg/exec";
 
-    // lê código da URL
+    // lê código da URL (aceita ?c=... ou ?codigo=...)
     const qs = new URLSearchParams(location.search);
-    const codigo = (qs.get('c') || '').trim();
-    document.getElementById('pill').textContent = 'Código: ' + (codigo || '—');
+    const codigo = (qs.get('c') || qs.get('codigo') || '').trim() || 'SEM-CODIGO';
+    document.getElementById('pill').textContent = 'Código: ' + codigo;
 
     const form = document.getElementById('form');
     const msg = document.getElementById('msg');
@@ -135,88 +135,106 @@
     const btnBaixar = document.getElementById('btnBaixar');
     const btnNovo = document.getElementById('btnNovo');
     const btnLimpar = document.getElementById('btnLimpar');
-    const btnSubmit = document.getElementById('btnSubmit');
+    const btnSubmit = document.querySelector('button[type="submit"]');
     let lastPNG = null;
 
-    // 🔸 integra com a planilha: busca palestra e preenche título/data
+    // 1) Carrega dados da palestra e habilita/desabilita botão
     async function carregarPalestra() {
-      const titleEl = document.getElementById('eventTitle');
-      const dateEl  = document.getElementById('eventDate');
-
-      if (!codigo) {
-        titleEl.textContent = 'Código não informado';
-        dateEl.textContent = '';
-        btnSubmit.disabled = true;
+      if (codigo === 'SEM-CODIGO') {
         msg.innerHTML = '<span class="err">Inclua ?c=CODIGO na URL.</span>';
+        btnSubmit.disabled = true;
         return;
       }
-
       try {
         const r = await fetch(`${API}?codigo=${encodeURIComponent(codigo)}`);
         const res = await r.json();
-
         if (!res.ok) {
-          titleEl.textContent = 'Palestra não encontrada';
-          dateEl.textContent = '';
+          document.getElementById('eventTitle').textContent = 'Palestra não encontrada';
+          document.getElementById('eventDate').textContent  = '';
           btnSubmit.disabled = true;
           msg.innerHTML = '<span class="err">Código inválido na planilha.</span>';
           return;
         }
-
         const p = res.palestra;
-        titleEl.textContent = p.descricao || 'Palestra';
-        dateEl.textContent  = p.dataBR ? `Data: ${p.dataBR}` : '';
-
+        document.getElementById('eventTitle').textContent = p.descricao || 'Palestra';
+        document.getElementById('eventDate').textContent  = p.dataBR ? `Data: ${p.dataBR}` : '';
         if (!p.ativo) {
           btnSubmit.disabled = true;
           msg.innerHTML = '<span class="err">Palestra inativa — geração de QR bloqueada.</span>';
         } else {
           btnSubmit.disabled = false;
-          msg.innerHTML = '<span class="ok">Palestra ativa — você pode gerar o QR.</span>';
+          msg.innerHTML = '<span class="ok">Palestra ativa — pode gerar o QR.</span>';
         }
-      } catch (err) {
-        console.error(err);
-        titleEl.textContent = 'Erro ao consultar palestra';
-        dateEl.textContent  = '';
+      } catch (e) {
+        console.error(e);
         btnSubmit.disabled = true;
         msg.innerHTML = '<span class="err">Falha ao acessar a API.</span>';
       }
     }
     carregarPalestra();
 
-    // geração do QR (mantido do seu template)
-    form.addEventListener('submit', ev=>{
+    // 2) Ao submeter: REGISTRA na aba Convidados e depois gera o QR
+    form.addEventListener('submit', async (ev)=>{
       ev.preventDefault();
       if (btnSubmit.disabled) return;
 
-      qrbox.innerHTML = '';
       const email = document.getElementById('email').value.trim();
-      const nome = document.getElementById('nome').value.trim();
+      const nome  = document.getElementById('nome').value.trim();
       const periodo = document.getElementById('periodo').value;
 
-      if(!email || !codigo){
-        msg.innerHTML = '<span class="err">Preencha o e-mail e use um código válido.</span>';
+      if(!email || !codigo || !nome || !periodo){
+        msg.innerHTML = '<span class="err">Preencha todos os campos.</span>';
         return;
       }
 
-      const conteudo = `${email}|${codigo}`; // 🔐 padrão combinado
-      const container = document.createElement('div');
-      qrbox.appendChild(container);
+      // ⏳ feedback
+      msg.innerHTML = 'Registrando…';
 
-      new QRCode(container, {
-        text: conteudo,
-        width: 250, height: 250,
-        correctLevel: QRCode.CorrectLevel.M
-      });
+      try {
+        // Evita preflight: envia como x-www-form-urlencoded
+        const body = new URLSearchParams({
+          action: 'registrar',
+          codigoPalestra: codigo,
+          nome, email, periodo
+        }).toString();
 
-      // Captura imagem
-      setTimeout(()=>{
-        const img = container.querySelector('img');
-        lastPNG = img ? img.src : null;
-        btnBaixar.disabled = !lastPNG;
-        btnNovo.disabled = false;
-        msg.innerHTML = `<span class="ok">QR gerado: <b>${conteudo}</b></span>`;
-      }, 150);
+        const resp = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body
+        });
+        const data = await resp.json();
+
+        if (!data.ok) {
+          msg.innerHTML = `<span class="err">${data.error || 'Erro ao registrar'}</span>`;
+          return;
+        }
+
+        // Sucesso (novo ou existente): gera o QR
+        const conteudo = `${email}|${codigo}`;
+        qrbox.innerHTML = '';
+        const container = document.createElement('div');
+        qrbox.appendChild(container);
+
+        new QRCode(container, {
+          text: conteudo,
+          width: 250, height: 250,
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+        setTimeout(()=>{
+          const img = container.querySelector('img');
+          lastPNG = img ? img.src : null;
+          btnBaixar.disabled = !lastPNG;
+          btnNovo.disabled = false;
+          const statusTxt = data.status === 'existente' ? ' (já cadastrado)' : ' (novo)';
+          msg.innerHTML = `<span class="ok">QR gerado${statusTxt}: <b>${conteudo}</b></span>`;
+        }, 150);
+
+      } catch (e) {
+        console.error(e);
+        msg.innerHTML = '<span class="err">Erro ao registrar. Tente novamente.</span>';
+      }
     });
 
     btnBaixar.onclick = ()=>{
