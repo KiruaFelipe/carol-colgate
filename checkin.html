@@ -1,32 +1,123 @@
-<?!= include_('sharedHead'); ?>
-<body>
-  <main class="container">
-    <h1>Leitor de Presença</h1>
-    <section class="card">
-      <p>Abra a câmera e aponte para o QR do convidado.</p>
-      <video id="video" playsinline></video>
-      <div class="btns">
-        <button id="start">Iniciar câmera</button>
-        <button id="stop" disabled>Parar</button>
-      </div>
-      <p id="status">Parado.</p>
-      <p>Token lido: <code id="tok">—</code></p>
-      <p>Resultado: <span id="res">—</span></p>
-    </section>
-  </main>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Leitor — Palestra</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
+  <style>
+    :root{
+      --brand:#E2231A;
+      --brand-dark:#B51C15;
+      --txt:#111827;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --bg:#f7f7f8;
+      --stroke:#e5e7eb;
+      --ok:#16a34a;
+      --err:#dc2626;
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{ margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial; color:var(--txt); background:var(--bg)}
+    .wrap{min-height:100%; display:grid; grid-template-rows:auto 1fr auto}
+    header{ background:var(--brand); color:#fff; padding:14px 18px}
+    .head-inner{max-width:1080px; margin:0 auto; display:flex; align-items:center; gap:16px; justify-content:space-between}
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{width:120px; height:32px; object-fit:contain; filter: drop-shadow(0 1px 0 rgba(0,0,0,.1))}
+    .title{font-weight:700}
+    .code-pill{background:#fff; color:var(--txt); border:1px solid #ffffff66; padding:8px 12px; border-radius:999px; font-weight:600; box-shadow:0 3px 10px rgba(0,0,0,.08)}
+
+    main{max-width:1080px; margin:28px auto; padding:0 18px}
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:20px}
+    @media (max-width:940px){ .grid{grid-template-columns:1fr} }
+
+    .card{ border:1px solid var(--stroke); background:var(--card); border-radius:var(--radius); padding:22px; box-shadow:0 8px 30px rgba(0,0,0,.06) }
+    h2{margin:0 0 12px; font-size:22px}
+    .muted{color:var(--muted)}
+    .btn{ padding:12px 16px; border-radius:12px; cursor:pointer; border:0; background:var(--brand); color:#fff; font-weight:700; letter-spacing:.2px }
+    .btn:hover{ filter:brightness(1.05) }
+    .btn:active{ transform:translateY(1px) }
+    .btn-ghost{ background:#fff; color:var(--brand); border:1px solid var(--brand) }
+
+    video, canvas{ width:100%; max-width:560px; border-radius:14px; background:#000 }
+    .controls{ display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 0 }
+    .status{margin-top:8px; font-size:14px}
+    .ok{color:var(--ok)} .err{color:var(--err)}
+
+    .kv{display:grid; grid-template-columns:140px 1fr; gap:8px; align-items:center}
+    .kv div{padding:8px 10px; border:1px solid var(--stroke); border-radius:10px; background:#fafafa}
+    .badge{padding:6px 10px; border:1px solid var(--stroke); border-radius:999px; color:#374151}
+    footer{padding:22px 18px; text-align:center; color:var(--muted); font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- HEADER -->
+    <header>
+      <div class="head-inner">
+        <div class="brand">
+          <img src="logo.png" alt="Logo" class="logo" onerror="this.style.display='none'">
+          <div class="title">Leitor de QR — Check-in</div>
+        </div>
+        <div id="pill" class="code-pill">Código: —</div>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main>
+      <div class="grid">
+        <!-- Coluna esquerda: câmera -->
+        <section class="card">
+          <h2>Câmera</h2>
+          <p class="muted">Abra a câmera, aponte para o QR e veja os dados decodificados abaixo.</p>
+          <video id="video" playsinline></video>
+          <div class="controls">
+            <button id="start" class="btn">Iniciar câmera</button>
+            <button id="stop" class="btn btn-ghost" disabled>Parar</button>
+          </div>
+          <div id="status" class="status muted">Parado.</div>
+          <div style="margin-top:8px"><span class="badge">HTTPS necessário para acesso à câmera</span></div>
+        </section>
+
+        <!-- Coluna direita: resultado -->
+        <section class="card">
+          <h2>Dados do QR</h2>
+          <p class="muted">Sem integrações: apenas exibição do conteúdo do QR.</p>
+          <div class="kv" style="margin-top:6px">
+            <strong>Código</strong><div id="out-cod">—</div>
+            <strong>Nome</strong><div id="out-nome">—</div>
+            <strong>E-mail</strong><div id="out-email">—</div>
+            <strong>Período</strong><div id="out-periodo">—</div>
+            <strong>Timestamp</strong><div id="out-ts">—</div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer>© Estudo Colgate — protótipo estático</footer>
+  </div>
+
+  <!-- jsQR para ler QR a partir do frame da câmera -->
   <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
   <script>
+    // Lê o código da URL (?c=...)
+    const qs = new URLSearchParams(location.search);
+    const codigo = (qs.get('c') || '').trim() || 'SEM-CODIGO';
+    document.getElementById('pill').textContent = 'Código: ' + codigo;
+    document.getElementById('out-cod').textContent = codigo;
+
     const video = document.getElementById('video');
     const startBtn = document.getElementById('start');
     const stopBtn = document.getElementById('stop');
     const statusEl = document.getElementById('status');
-    const tokEl = document.getElementById('tok');
-    const resEl = document.getElementById('res');
 
     let stream=null, running=false, animId=null;
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d', {willReadFrequently:true});
+    const ctx = canvas.getContext('2d', { willReadFrequently:true });
 
     async function startCam() {
       try {
@@ -51,7 +142,16 @@
       statusEl.textContent='Parado.';
     }
 
-    async function loop() {
+    function preencherCampos(obj){
+      // obj esperado do register.html: {codigoPalestra, nome, email, periodo, ts}
+      document.getElementById('out-cod').textContent     = obj.codigoPalestra || codigo || '—';
+      document.getElementById('out-nome').textContent    = obj.nome || '—';
+      document.getElementById('out-email').textContent   = obj.email || '—';
+      document.getElementById('out-periodo').textContent = obj.periodo || '—';
+      document.getElementById('out-ts').textContent      = obj.ts || '—';
+    }
+
+    function loop() {
       if (!running) return;
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvas.width = video.videoWidth;
@@ -59,21 +159,18 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const img = ctx.getImageData(0,0,canvas.width,canvas.height);
         const qr = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+
         if (qr && qr.data) {
-          stopCam();
-          const token = qr.data.trim();
-          tokEl.textContent = token;
-          statusEl.innerHTML = '<span class="ok">QR detectado</span>';
-          // marca presença
-          google.script.run.withSuccessHandler(r=>{
-            if (!r.ok) { resEl.innerHTML = '<span class="err">'+(r.msg||'Falha')+'</span>'; return; }
-            if (r.status === 'marcado') {
-              resEl.innerHTML = '<span class="ok">Presença registrada: '+r.presenca+'</span>';
-            } else {
-              resEl.innerHTML = '<span class="ok">Já tinha presença: '+r.presenca+'</span>';
-            }
-          }).marcarPresencaPorToken(token);
-          return;
+          // Tenta interpretar como JSON gerado no register.html
+          try{
+            const obj = JSON.parse(qr.data);
+            statusEl.innerHTML = '<span class="ok">QR detectado</span>';
+            preencherCampos(obj);
+          }catch{
+            statusEl.innerHTML = '<span class="ok">QR detectado (texto não-JSON)</span>';
+            preencherCampos({ codigoPalestra: codigo, nome: qr.data });
+          }
+          // Não para automaticamente — o operador decide
         }
       }
       animId = requestAnimationFrame(loop);
