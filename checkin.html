@@ -1,0 +1,86 @@
+<?!= include_('sharedHead'); ?>
+<body>
+  <main class="container">
+    <h1>Leitor de Presença</h1>
+    <section class="card">
+      <p>Abra a câmera e aponte para o QR do convidado.</p>
+      <video id="video" playsinline></video>
+      <div class="btns">
+        <button id="start">Iniciar câmera</button>
+        <button id="stop" disabled>Parar</button>
+      </div>
+      <p id="status">Parado.</p>
+      <p>Token lido: <code id="tok">—</code></p>
+      <p>Resultado: <span id="res">—</span></p>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
+  <script>
+    const video = document.getElementById('video');
+    const startBtn = document.getElementById('start');
+    const stopBtn = document.getElementById('stop');
+    const statusEl = document.getElementById('status');
+    const tokEl = document.getElementById('tok');
+    const resEl = document.getElementById('res');
+
+    let stream=null, running=false, animId=null;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', {willReadFrequently:true});
+
+    async function startCam() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream;
+        await video.play();
+        running = true;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        statusEl.textContent = 'Câmera ativa…';
+        loop();
+      } catch (e) {
+        statusEl.innerHTML = '<span class="err">Erro ao abrir câmera</span>';
+        console.error(e);
+      }
+    }
+    function stopCam() {
+      running = false;
+      if (animId) cancelAnimationFrame(animId);
+      if (stream) stream.getTracks().forEach(t=>t.stop());
+      startBtn.disabled = false; stopBtn.disabled = true;
+      statusEl.textContent='Parado.';
+    }
+
+    async function loop() {
+      if (!running) return;
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+        const qr = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+        if (qr && qr.data) {
+          stopCam();
+          const token = qr.data.trim();
+          tokEl.textContent = token;
+          statusEl.innerHTML = '<span class="ok">QR detectado</span>';
+          // marca presença
+          google.script.run.withSuccessHandler(r=>{
+            if (!r.ok) { resEl.innerHTML = '<span class="err">'+(r.msg||'Falha')+'</span>'; return; }
+            if (r.status === 'marcado') {
+              resEl.innerHTML = '<span class="ok">Presença registrada: '+r.presenca+'</span>';
+            } else {
+              resEl.innerHTML = '<span class="ok">Já tinha presença: '+r.presenca+'</span>';
+            }
+          }).marcarPresencaPorToken(token);
+          return;
+        }
+      }
+      animId = requestAnimationFrame(loop);
+    }
+
+    startBtn.addEventListener('click', startCam);
+    stopBtn.addEventListener('click', stopCam);
+  </script>
+</body>
+</html>
