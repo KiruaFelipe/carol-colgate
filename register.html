@@ -6,115 +6,110 @@
   <title>Cadastro — Palestra</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      --bg1:#0f172a; --bg2:#111827; --card:#0b1022ee; --stroke:#31426866;
-      --txt:#e5e7eb; --muted:#9ca3af; --brand:#6ee7b7; --brand2:#60a5fa;
-      --ok:#10b981; --err:#ef4444;
+      --brand:#E2231A;        /* Colgate red */
+      --brand-dark:#B51C15;
+      --txt:#111827;          /* near-black */
+      --muted:#6b7280;        /* slate-500 */
+      --card:#ffffff;
+      --bg:#f7f7f8;
+      --stroke:#e5e7eb;
+      --ok:#16a34a;
+      --err:#dc2626;
       --radius:18px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color:var(--txt);
-      background: radial-gradient(1200px 600px at 10% -10%, #1e293b 0%, transparent 60%),
-                  radial-gradient(1000px 600px at 110% 0%, #0b3b70 0%, transparent 60%),
-                  linear-gradient(180deg, var(--bg1), var(--bg2));
+      color:var(--txt); background:var(--bg);
     }
-    .wrap{display:grid; place-items:center; min-height:100%}
-    .shell{width:min(960px, 94vw); margin:40px 0}
+    .wrap{min-height:100%; display:grid; grid-template-rows:auto 1fr auto}
     header{
-      display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:16px;
+      background:var(--brand); color:#fff;
+      padding:14px 18px;
     }
-    .logo{display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.3px}
-    .logo-badge{
-      width:34px; height:34px; border-radius:10px;
-      background:linear-gradient(135deg, var(--brand), var(--brand2));
-      display:grid; place-items:center; color:#0b1022; font-weight:900;
-      box-shadow:0 10px 30px #0006 inset, 0 10px 20px #0006;
+    .head-inner{max-width:1080px; margin:0 auto; display:flex; align-items:center; gap:16px; justify-content:space-between}
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{
+      width:120px; height:32px; object-fit:contain; filter: drop-shadow(0 1px 0 rgba(0,0,0,.1));
+      background:#fff0; /* troque src lá no HTML */
     }
-    .codepill{
-      padding:8px 12px; border:1px solid var(--stroke); border-radius:999px; color:var(--muted);
-      display:flex; align-items:center; gap:8px; backdrop-filter: blur(6px);
+    .title{font-weight:700; letter-spacing:.2px}
+    .code-pill{
+      background:#fff; color:var(--txt); border:1px solid #ffffff66;
+      padding:8px 12px; border-radius:999px; font-weight:600;
+      box-shadow:0 3px 10px rgba(0,0,0,.08);
     }
-    .grid{
-      display:grid; grid-template-columns: 1.15fr .85fr; gap:18px;
-    }
-    @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+
+    main{max-width:1080px; margin:28px auto; padding:0 18px}
+    .grid{display:grid; grid-template-columns:1.15fr .85fr; gap:20px}
+    @media (max-width:940px){ .grid{grid-template-columns:1fr} }
 
     .card{
-      border:1px solid var(--stroke);
-      background:linear-gradient(180deg, #0b1022f0, #0a0f21e8);
-      border-radius:var(--radius); padding:22px;
-      box-shadow: 0 14px 40px #0008, inset 0 1px 0 #ffffff0a;
+      border:1px solid var(--stroke); background:var(--card); border-radius:var(--radius);
+      padding:22px; box-shadow:0 8px 30px rgba(0,0,0,.06);
     }
-    .title{font-size:22px; font-weight:700; margin:0 0 12px}
+    h2{margin:0 0 12px; font-size:22px}
     .muted{color:var(--muted)}
     .event{
-      display:flex; gap:16px; align-items:center; margin:8px 0 18px;
+      display:flex; align-items:center; gap:12px; margin:6px 0 14px;
     }
-    .event .dot{
-      width:10px; height:10px; border-radius:50%;
-      background: radial-gradient(circle at 40% 35%, #9ef8d9, #1fc68d 70%);
-      box-shadow:0 0 12px #34d399aa;
-    }
+    .dot{width:10px; height:10px; border-radius:50%; background:var(--brand)}
     form{display:grid; gap:14px; margin-top:10px}
     .field{display:grid; gap:8px}
-    label{font-weight:600; font-size:13px; color:#cbd5e1}
+    label{font-weight:600; font-size:13px; color:#374151}
     input, select{
-      width:100%; padding:12px 14px; border-radius:12px;
-      border:1px solid var(--stroke); background:#0a1020; color:var(--txt);
-      outline:none; transition:border .15s ease, box-shadow .15s ease;
+      width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--stroke);
+      background:#fff; color:var(--txt); outline:none; transition:border .15s ease, box-shadow .15s ease;
     }
-    input:focus, select:focus{ border-color:#6ee7b7aa; box-shadow:0 0 0 4px #34d39922 }
-    .row{display:grid; grid-template-columns: 1fr 1fr; gap:12px}
+    input:focus, select:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(226,35,26,.15) }
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
     .btn{
-      padding:12px 16px; border-radius:12px; border:1px solid #2b3b62; cursor:pointer;
-      background:linear-gradient(180deg, #12213a, #0f1a33);
-      color:#e7f9ff; font-weight:700; letter-spacing:.2px;
-      transition: transform .06s ease, box-shadow .2s ease;
-      box-shadow:0 10px 24px #0b1022;
+      padding:12px 16px; border-radius:12px; cursor:pointer; border:0;
+      background:var(--brand); color:#fff; font-weight:700; letter-spacing:.2px;
+      transition:transform .05s ease, filter .15s ease;
     }
-    .btn:hover{ box-shadow:0 14px 30px #0b1022, 0 0 0 3px #60a5fa22 inset }
+    .btn:hover{ filter:brightness(1.05) }
     .btn:active{ transform:translateY(1px) }
+    .btn-ghost{
+      background:#fff; color:var(--brand); border:1px solid var(--brand);
+    }
 
     .qrbox{
       display:grid; place-items:center; gap:12px; padding:18px; border-radius:14px;
-      border:1px dashed #3b4a72; background:#0a102030; min-height:320px;
+      border:1px dashed var(--stroke); background:#fafafa; min-height:320px;
     }
-    .status{margin-top:8px; font-size:14px}
+    .status{margin-top:6px; font-size:14px}
     .ok{color:var(--ok)} .err{color:var(--err)}
-
-    .footer{
-      margin-top:16px; display:flex; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:12px;
-      justify-content:space-between; align-items:center;
-    }
-    .ghost{border-color:#2b3b62; background:#0b1022}
-    .badge{padding:6px 10px; border:1px solid var(--stroke); border-radius:999px; color:#b7c4dd}
-    a { color:#a5b4fc; text-decoration:none }
-    .center{ text-align:center }
+    footer{padding:22px 18px; text-align:center; color:var(--muted); font-size:12px}
+    .badge{padding:6px 10px; border:1px solid var(--stroke); border-radius:999px; color:#374151}
+    .note{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-top:12px}
+    .home-tip{font-size:12px}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="shell">
-      <header>
-        <div class="logo">
-          <div class="logo-badge">QR</div>
-          <div>Check-in Palestra</div>
+    <!-- HEADER -->
+    <header>
+      <div class="head-inner">
+        <div class="brand">
+          <!-- Troque 'logo.png' pela sua logo ou URL externo -->
+          <img src="logo.png" alt="Logo" class="logo" onerror="this.style.display='none'">
+          <div class="title">Check-in de Palestra</div>
         </div>
-        <div class="codepill">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/></svg>
-          <span id="pill">Código: —</span>
-        </div>
-      </header>
+        <div id="pill" class="code-pill">Código: —</div>
+      </div>
+    </header>
 
+    <!-- MAIN -->
+    <main>
       <div class="grid">
-        <!-- COL 1: FORM -->
+        <!-- Coluna esquerda: formulário -->
         <section class="card">
-          <h2 class="title">Cadastro do Convidado</h2>
-
+          <h2>Cadastro do Convidado</h2>
           <div class="event">
             <div class="dot"></div>
             <div>
@@ -128,6 +123,7 @@
               <label for="nome">Nome completo</label>
               <input id="nome" autocomplete="name" placeholder="Ex.: Maria de Souza" required />
             </div>
+
             <div class="row">
               <div class="field">
                 <label for="email">E-mail</label>
@@ -146,47 +142,45 @@
 
             <div class="row">
               <button class="btn" type="submit">Gerar QRCode</button>
-              <button class="btn ghost" type="button" id="btnLimpar">Limpar</button>
+              <button class="btn btn-ghost" type="button" id="btnLimpar">Limpar</button>
             </div>
-            <div id="msg" class="status muted"></div>
-          </form>
+            <div id="msg" class="status"></div>
 
-          <div class="footer">
-            <span class="badge">Somente visual — sem salvar dados</span>
-            <span>Precisa da versão com planilha e presença? Falo contigo 😉</span>
-          </div>
+            <div class="note">
+              <span class="badge">Somente visual · sem salvar dados</span>
+              <span class="home-tip">Acesse com <code>?c=ABC123</code> na URL para definir o código.</span>
+            </div>
+          </form>
         </section>
 
-        <!-- COL 2: QR RESULT -->
+        <!-- Coluna direita: QR -->
         <section class="card">
-          <h2 class="title">Seu QRCode</h2>
+          <h2>Seu QRCode</h2>
           <div id="qrbox" class="qrbox">
-            <div class="muted center">
-              Gere o QR preenchendo o formulário ao lado.
-              <div style="margin-top:6px;font-size:12px">O QR inclui: código, nome, e-mail e período.</div>
+            <div class="muted" style="text-align:center">
+              Gere o QR preenchendo o formulário ao lado.<br/>
+              <small>O QR inclui: código, nome, e-mail e período.</small>
             </div>
           </div>
           <div class="row" style="margin-top:12px">
             <button class="btn" id="btnBaixar" type="button" disabled>Baixar imagem</button>
-            <button class="btn ghost" id="btnNovo" type="button" disabled>Novo QR</button>
+            <button class="btn btn-ghost" id="btnNovo" type="button" disabled>Novo QR</button>
           </div>
         </section>
       </div>
-    </div>
+    </main>
+
+    <footer>© Estudo Colgate — protótipo estático</footer>
   </div>
 
   <!-- Lib para gerar QR -->
   <script src="https://unpkg.com/qrcode/build/qrcode.min.js"></script>
   <script>
-    // Utilidades
+    // Lê o código da URL (?c=...)
     const qs = new URLSearchParams(location.search);
     const codigo = (qs.get('c') || '').trim() || 'SEM-CODIGO';
-    const pill = document.getElementById('pill');
-    pill.textContent = 'Código: ' + codigo;
-
-    // Mock de info do evento (só visual)
+    document.getElementById('pill').textContent = 'Código: ' + codigo;
     document.getElementById('eventTitle').textContent = 'Palestra — Código ' + codigo;
-    document.getElementById('eventDate').textContent  = 'Data: defina na sua planilha';
 
     const form = document.getElementById('form');
     const msg  = document.getElementById('msg');
@@ -194,7 +188,6 @@
     const btnBaixar = document.getElementById('btnBaixar');
     const btnNovo = document.getElementById('btnNovo');
     const btnLimpar = document.getElementById('btnLimpar');
-
     let lastCanvas = null;
 
     function validaNome(n){ return n.trim().split(/\s+/).length >= 2; }
@@ -212,16 +205,12 @@
         msg.innerHTML = '<span class="err">Informe nome e sobrenome.</span>';
         return;
       }
-      // payload que vai dentro do QR (json legível)
       const payload = {
         codigoPalestra: codigo,
-        nome,
-        email,
-        periodo,
+        nome, email, periodo,
         ts: new Date().toISOString()
       };
 
-      // Gera QR
       QRCode.toCanvas(JSON.stringify(payload), { width: 260 }, (err, canvas)=>{
         if(err){
           msg.innerHTML = '<span class="err">Falha ao gerar QR.</span>';
@@ -245,14 +234,12 @@
     });
 
     btnNovo.addEventListener('click', ()=>{
-      lastCanvas = null; qrbox.innerHTML = '<div class="muted center">Gere o QR preenchendo o formulário ao lado.</div>';
+      lastCanvas = null;
+      qrbox.innerHTML = '<div class="muted" style="text-align:center">Gere o QR preenchendo o formulário ao lado.</div>';
       btnBaixar.disabled = true; btnNovo.disabled = true; msg.textContent='';
     });
 
-    btnLimpar.addEventListener('click', ()=>{
-      form.reset(); msg.textContent='';
-      document.getElementById('nome').focus();
-    });
+    btnLimpar.addEventListener('click', ()=>{ form.reset(); msg.textContent=''; document.getElementById('nome').focus(); });
   </script>
 </body>
 </html>
