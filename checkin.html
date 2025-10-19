@@ -33,53 +33,27 @@
     .err{color:var(--err)}
     .kv{display:grid;grid-template-columns:120px 1fr;gap:8px}
     .kv div{padding:6px 8px;background:#f9fafb;border-radius:6px}
+    .event{display:flex;align-items:center;gap:12px;margin:6px 0 10px}
+    .event .dot{width:10px;height:10px;border-radius:50%;background:var(--brand)}
+    .muted{color:var(--muted)}
 
     /* -------- Modal -------- */
-    .backdrop{
-      position:fixed; inset:0; background:rgba(0,0,0,.45);
-      display:none; align-items:center; justify-content:center;
-      padding:16px; z-index:50;
-    }
+    .backdrop{position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; padding:16px; z-index:50;}
     .backdrop.show{display:flex; animation:fadeIn .15s ease}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    .modal{
-      width:min(520px, 96vw);
-      background:#fff; color:var(--txt);
-      border-radius:16px; border:1px solid var(--stroke);
-      box-shadow:0 20px 60px rgba(0,0,0,.25);
-      overflow:hidden;
-      transform:translateY(6px); animation:pop .18s ease forwards;
-    }
+    .modal{width:min(520px, 96vw); background:#fff; color:var(--txt); border-radius:16px; border:1px solid var(--stroke);
+      box-shadow:0 20px 60px rgba(0,0,0,.25); overflow:hidden; transform:translateY(6px); animation:pop .18s ease forwards;}
     @keyframes pop{to{transform:translateY(0)}}
-    .modal-head{
-      padding:14px 16px; background:#fff; border-bottom:1px solid var(--stroke);
-      display:flex; align-items:center; justify-content:space-between; gap:8px;
-    }
+    .modal-head{padding:14px 16px; background:#fff; border-bottom:1px solid var(--stroke); display:flex; align-items:center; justify-content:space-between; gap:8px;}
     .mh-title{font-weight:700}
     .modal-body{padding:16px}
-    .modal-actions{
-      padding:14px 16px; background:#fafafa; border-top:1px solid var(--stroke);
-      display:flex; gap:10px; justify-content:flex-end;
-    }
-    .badge{
-      padding:4px 8px; border-radius:999px; border:1px solid var(--stroke); color:#374151; font-size:12px;
-    }
-    .toast{
-      position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
-      background:#0e9f6e; color:#fff; padding:10px 14px; border-radius:10px;
-      box-shadow:0 10px 30px rgba(0,0,0,.25); font-weight:600; display:none; z-index:60;
-    }
+    .modal-actions{padding:14px 16px; background:#fafafa; border-top:1px solid var(--stroke); display:flex; gap:10px; justify-content:flex-end;}
+    .badge{padding:4px 8px; border-radius:999px; border:1px solid var(--stroke); color:#374151; font-size:12px;}
+    .toast{position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#0e9f6e; color:#fff; padding:10px 14px; border-radius:10px;
+      box-shadow:0 10px 30px rgba(0,0,0,.25); font-weight:600; display:none; z-index:60;}
     .toast.show{display:block; animation:fadeIn .12s ease}
-
-    /* feedback de erro com leve "shake" */
     .shake{animation:shake .25s}
-    @keyframes shake {
-      0% { transform: translateX(0) }
-      25% { transform: translateX(-4px) }
-      50% { transform: translateX(4px) }
-      75% { transform: translateX(-3px) }
-      100% { transform: translateX(0) }
-    }
+    @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-3px)}100%{transform:translateX(0)}}
   </style>
 </head>
 <body>
@@ -89,11 +63,23 @@
   </header>
 
   <main>
+    <!-- Card com informações da palestra -->
+    <section class="card" id="infoCard">
+      <h2>Informações da palestra</h2>
+      <div class="event">
+        <div class="dot"></div>
+        <div>
+          <div id="eventTitle" class="muted">Carregando…</div>
+          <div id="eventDate" class="muted" style="font-size:12px"></div>
+        </div>
+      </div>
+    </section>
+
     <div class="grid">
       <!-- Câmera -->
       <section class="card" id="cameraCard">
         <h2>Câmera</h2>
-        <p class="muted">Formato esperado do QR: <code>email|codigo</code>. O código deve coincidir com o código deste check-in.</p>
+        <p class="muted">Formato esperado do QR: <code>email|codigo</code>. O código deve coincidir com este check-in.</p>
         <video id="video" playsinline></video>
         <div style="margin-top:10px;display:flex;gap:10px">
           <button id="start" class="btn">Iniciar</button>
@@ -131,6 +117,7 @@
           <div><strong>Código:</strong> <span id="mCodigo">—</span></div>
           <div><strong>Detectado em:</strong> <span id="mTs">—</span></div>
         </div>
+        <div id="modalInfo" class="muted" style="margin-top:8px;"></div>
       </div>
       <div class="modal-actions">
         <button id="btnCancelar" class="btn-ghost">Cancelar</button>
@@ -139,13 +126,13 @@
     </div>
   </div>
 
-  <!-- Toast (simulação de sucesso) -->
-  <div id="toast" class="toast">Presença confirmada (simulação)</div>
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
 
   <!-- jsQR -->
   <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
   <script>
-  // 🔗 URL do Web App (Apps Script) — COLE A SUA /exec
+  // 🔗 sua URL /exec
   const API = "https://script.google.com/macros/s/AKfycbwGbJWIfovlaegsXKKsBJpImPL5ABvIhbIGUPcRJcu1TlwmhSgKFWHCNXSibcKDSfNxog/exec";
 
   // Código da URL (?c=...)
@@ -165,16 +152,36 @@
   const modalBadge = document.getElementById('modalBadge');
   const btnCancelar = document.getElementById('btnCancelar');
   const btnConfirmar = document.getElementById('btnConfirmar');
+  const modalInfo = document.getElementById('modalInfo');
   const toast = document.getElementById('toast');
 
-  let stream=null, running=false, animId=null, lastPayload=null;
+  let stream=null, running=false, animId=null, lastPayload=null, modalOpen=false;
   const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d',{willReadFrequently:true});
 
-  // Valida palestra antes de liberar a câmera
+  function showToast(txt, ok=true){
+    toast.style.background = ok ? '#0e9f6e' : '#dc2626';
+    toast.textContent = txt;
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'), 2000);
+  }
+  function openModal(email, codigo){
+    modalOpen = true;
+    mEmail.textContent=email||'—'; mCodigo.textContent=codigo||'—';
+    mTs.textContent=new Date().toLocaleString(); modalBadge.textContent='Palestra: '+(codigo||'—');
+    modalInfo.textContent = '';
+    backdrop.classList.add('show'); backdrop.setAttribute('aria-hidden','false');
+  }
+  function closeModal(){ modalOpen=false; backdrop.classList.remove('show'); backdrop.setAttribute('aria-hidden','true'); }
+
+  // 1) Trazer informações da palestra
   (async () => {
+    const titleEl = document.getElementById('eventTitle');
+    const dateEl  = document.getElementById('eventDate');
+
     if (codigoUrl === 'SEM-CODIGO') {
-      statusEl.innerHTML = '<span class="err">Código ausente na URL</span>';
+      titleEl.textContent = 'Código não informado';
       startBtn.disabled = true;
+      statusEl.innerHTML = '<span class="err">Inclua ?c=CODIGO na URL.</span>';
       return;
     }
     try {
@@ -182,14 +189,18 @@
       const res = await r.json();
       if (!res.ok) throw new Error('Palestra não encontrada');
       if (!res.palestra.ativo) throw new Error('Palestra inativa');
-      document.getElementById('eventTitle')?.textContent = res.palestra.descricao || 'Palestra';
-      document.getElementById('eventDate')?.textContent  = res.palestra.dataBR ? 'Data: ' + res.palestra.dataBR : '';
+
+      titleEl.textContent = res.palestra.descricao || 'Palestra';
+      dateEl.textContent  = res.palestra.dataBR ? `Data: ${res.palestra.dataBR}` : '';
     } catch (e) {
-      statusEl.innerHTML = `<span class="err">${e.message}</span>`;
+      titleEl.textContent = '—';
+      dateEl.textContent  = '';
       startBtn.disabled = true;
+      statusEl.innerHTML = `<span class="err">${e.message}</span>`;
     }
   })();
 
+  // 2) Câmera e leitura do QR
   async function startCam(){
     try{
       stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
@@ -198,20 +209,14 @@
       statusEl.textContent='Câmera ativa…'; loop();
     }catch(e){statusEl.innerHTML='<span class="err">Erro ao abrir câmera</span>';}
   }
-  function stopCam(){running=false;if(animId)cancelAnimationFrame(animId);if(stream)stream.getTracks().forEach(t=>t.stop());
-    startBtn.disabled=false;stopBtn.disabled=true;statusEl.textContent='Parado.';}
-  function openModal(email, codigo){
-    mEmail.textContent=email||'—'; mCodigo.textContent=codigo||'—';
-    mTs.textContent=new Date().toLocaleString(); modalBadge.textContent='Palestra: '+(codigo||'—');
-    backdrop.classList.add('show'); backdrop.setAttribute('aria-hidden','false');
-  }
-  function closeModal(){backdrop.classList.remove('show');backdrop.setAttribute('aria-hidden','true');}
-  function showToast(txt='Presença confirmada (simulação)'){
-    toast.textContent = txt; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1800);
+  function stopCam(){
+    running=false;if(animId)cancelAnimationFrame(animId);
+    if(stream)stream.getTracks().forEach(t=>t.stop());
+    startBtn.disabled=false;stopBtn.disabled=true;statusEl.textContent='Parado.';
   }
 
   function loop(){
-    if(!running)return;
+    if(!running || modalOpen) { animId=requestAnimationFrame(loop); return; }
     if(video.readyState===video.HAVE_ENOUGH_DATA){
       canvas.width=video.videoWidth; canvas.height=video.videoHeight;
       ctx.drawImage(video,0,0,canvas.width,canvas.height);
@@ -242,9 +247,10 @@
   backdrop.addEventListener('click',(e)=>{ if(e.target===backdrop) closeModal(); });
   window.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModal(); });
 
-  // 🔥 Confirmar presença: POST action=presenca
+  // 3) Confirmar presença (POST action=presenca)
   btnConfirmar.addEventListener('click', async ()=>{
     btnConfirmar.disabled = true;
+    modalInfo.textContent = 'Registrando presença…';
     try{
       const email = mEmail.textContent.trim();
       const body = new URLSearchParams({
@@ -261,24 +267,29 @@
       const data = await resp.json();
 
       if (!data.ok) {
-        showToast('Erro: ' + (data.error || 'falha ao confirmar'));
+        modalInfo.innerHTML = `<span class="err">${data.error || 'Falha ao confirmar'}</span>`;
+        showToast('Erro ao confirmar presença', false);
       } else if (data.status === 'ja_confirmada') {
-        showToast('Presença já confirmada anteriormente ✓');
+        modalInfo.innerHTML = `<span class="ok">Presença já estava confirmada ✓</span>`;
+        showToast('Presença já confirmada anteriormente ✓', true);
       } else {
-        showToast('Presença confirmada ✓');
+        modalInfo.innerHTML = `<span class="ok">Presença confirmada ✓</span>`;
+        showToast('Presença confirmada ✓', true);
       }
     } catch (e) {
-      showToast('Erro ao confirmar presença');
       console.error(e);
+      modalInfo.innerHTML = `<span class="err">Erro ao confirmar</span>`;
+      showToast('Erro ao confirmar presença', false);
     } finally {
       btnConfirmar.disabled = false;
-      closeModal();
+      // fecha o modal após breve pausa
+      setTimeout(closeModal, 700);
       // opcional: parar a câmera após confirmar
       // stopCam();
     }
   });
 
   btnCancelar.addEventListener('click', ()=> closeModal());
-</script>
+  </script>
 </body>
 </html>
