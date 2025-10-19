@@ -1,0 +1,77 @@
+<?!= include_('sharedHead'); ?>
+<body>
+  <main class="container">
+    <h1>Cadastro / QR</h1>
+    <section class="card">
+      <div id="palInfo">Carregando palestra…</div>
+      <form id="f" class="form" onsubmit="return enviar(event)">
+        <label>Nome Completo
+          <input required id="nome" />
+        </label>
+        <label>Email
+          <input required id="email" type="email" />
+        </label>
+        <label>Período
+          <select id="periodo" required>
+            <option value="">Selecione…</option>
+            <option>Manhã</option>
+            <option>Tarde</option>
+            <option>Noite</option>
+          </select>
+        </label>
+        <button type="submit">Gerar / Ver QRCode</button>
+      </form>
+
+      <div id="result"></div>
+      <div id="qrcode"></div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/qrcode/build/qrcode.min.js"></script>
+  <script>
+    const codigo = '<?= codigo ?>';
+
+    function setInfo(html) { document.getElementById('palInfo').innerHTML = html; }
+
+    function carregar() {
+      google.script.run.withSuccessHandler(pal => {
+        if (!pal.ok) { setInfo('<span class="err">' + pal.msg + '</span>'); return; }
+        setInfo(`<b>${pal.descricao}</b><br>Data: ${pal.data}<br><small>Código: ${pal.codigo}</small>`);
+      }).getPalestraAtiva(codigo);
+    }
+
+    function desenharQR(token) {
+      const el = document.getElementById('qrcode');
+      el.innerHTML = '';
+      // O conteúdo do QR pode ser só o token, ou JSON com {t: token}
+      QRCode.toCanvas(token, { width: 240 }, (err, canvas) => {
+        if (err) return console.error(err);
+        el.appendChild(canvas);
+      });
+    }
+
+    function enviar(ev) {
+      ev.preventDefault();
+      const nome = document.getElementById('nome').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const periodo = document.getElementById('periodo').value.trim();
+
+      document.getElementById('result').textContent = 'Processando…';
+
+      google.script.run.withSuccessHandler(res => {
+        if (!res.ok) { document.getElementById('result').innerHTML = '<span class="err">'+(res.msg||'Falha')+'</span>'; return; }
+        if (res.status === 'novo') {
+          document.getElementById('result').innerHTML = '<span class="ok">Cadastro realizado. Este é seu QR:</span>';
+        } else {
+          document.getElementById('result').innerHTML = '<span class="ok">Cadastro já existente. Este é seu QR:</span>';
+        }
+        desenharQR(res.token);
+      }).registrarOuObterQr(codigo, nome, email, periodo);
+
+      return false;
+    }
+
+    carregar();
+  </script>
+</body>
+</html>
