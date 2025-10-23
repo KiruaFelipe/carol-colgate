@@ -17,25 +17,52 @@
     .wrap{min-height:100%;display:grid;grid-template-rows:auto 1fr auto}
     header{background:var(--brand);color:#fff;padding:14px 18px}
     .head-inner{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:16px;justify-content:space-between}
-    .brand{display:flex;align-items:center;gap:12px}.logo{width:120px;height:32px;object-fit:contain}
-    .title{font-weight:700}.code-pill{background:#fff;color:var(--txt);border:1px solid #ffffff66;padding:8px 12px;border-radius:999px;font-weight:600;box-shadow:0 3px 10px rgba(0,0,0,.08)}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:120px;height:32px;object-fit:contain}
+    .title{font-weight:700}
+    .code-pill{background:#fff;color:var(--txt);border:1px solid #ffffff66;padding:8px 12px;border-radius:999px;font-weight:600;box-shadow:0 3px 10px rgba(0,0,0,.08)}
     main{max-width:1080px;margin:28px auto;padding:0 18px}
-    .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}@media (max-width:940px){.grid{grid-template-columns:1fr}}
+    .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}
+    @media (max-width:940px){.grid{grid-template-columns:1fr}}
     .card{border:1px solid var(--stroke);background:var(--card);border-radius:var(--radius);padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.06)}
     h2{margin:0 0 12px;font-size:22px}.muted{color:var(--muted)}
-    .event{display:flex;align-items:center;gap:12px;margin:6px 0 14px}.dot{width:10px;height:10px;border-radius:50%;background:var(--brand)}
-    form{display:grid;gap:14px;margin-top:10px}.field{display:grid;gap:8px}label{font-weight:600;font-size:13px;color:#374151}
+    .event{display:flex;align-items:center;gap:12px;margin:6px 0 14px}
+    .dot{width:10px;height:10px;border-radius:50%;background:var(--brand)}
+    form{display:grid;gap:14px;margin-top:10px}.field{display:grid;gap:8px}
+    label{font-weight:600;font-size:13px;color:#374151}
     input,select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--stroke);background:#fff;color:var(--txt);outline:none;transition:border .15s,box-shadow .15s}
     input:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(226,35,26,.15)}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .btn{padding:12px 16px;border-radius:12px;cursor:pointer;border:0;background:var(--brand);color:#fff;font-weight:700;letter-spacing:.2px}
-    .btn:hover{filter:brightness(1.05)} .btn:active{transform:translateY(1px)} .btn-ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+    .btn:hover{filter:brightness(1.05)} .btn:active{transform:translateY(1px)}
+    .btn-ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
     .qrbox{display:grid;place-items:center;gap:12px;padding:18px;border-radius:14px;border:1px dashed var(--stroke);background:#fafafa;min-height:320px}
     .status{margin-top:6px;font-size:14px}.ok{color:var(--ok)} .err{color:var(--err)}
     footer{padding:22px 18px;text-align:center;color:var(--muted);font-size:12px}
     .badge{padding:6px 10px;border:1px solid var(--stroke);border-radius:999px;color:#374151}
     .note{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
     .home-tip{font-size:12px}
+    .pill-mini{background:#fff2; border:1px solid #ffffff44; padding:6px 10px; border-radius:999px; font-size:12px}
+    .hdr-right{display:flex; align-items:center; gap:10px}
+    .card.form-card {
+      position: relative;
+      overflow: hidden;
+      background: var(--card);
+    }
+    .card.form-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url('./logo.jpg') no-repeat center center; /* mesmo arquivo do header */
+      background-size: 60%;
+      opacity: 0.08;               /* ajuste fino da intensidade */
+      pointer-events: none;
+      z-index: 0;
+    }
+    .card.form-card > * {
+      position: relative;
+      z-index: 1;
+    }
   </style>
 </head>
 <body>
@@ -43,35 +70,56 @@
     <header>
       <div class="head-inner">
         <div class="brand">
-          <img src="logo.png" alt="Logo" class="logo" onerror="this.style.display='none'">
+          <img src="logo.jpg" alt="Logo" class="logo" onerror="this.style.display='none'">
           <div class="title">Check-in de Palestra</div>
         </div>
-        <div id="pill" class="code-pill">Código: —</div>
+        <div class="hdr-right">
+          <div id="universidadePill" class="pill-mini" style="display:none"></div>
+          <div id="pill" class="code-pill">Código: —</div>
+        </div>
       </div>
     </header>
 
     <main>
       <div class="grid">
-        <section class="card">
-          <h2>Cadastro do Convidado</h2>
+        <section class="card form-card">
+          <h2>Cadastro do Inscrito</h2>
           <div class="event">
             <div class="dot"></div>
             <div>
               <div class="muted" id="eventTitle">Carregando…</div>
+              <div class="muted" id="eventUniversity" style="font-size:12px"></div>
               <div class="muted" id="eventDate" style="font-size:12px"></div>
             </div>
           </div>
-
           <form id="form">
             <div class="field">
               <label for="nome">Nome completo</label>
               <input id="nome" autocomplete="name" placeholder="Ex.: Maria de Souza" required />
             </div>
+
             <div class="row">
               <div class="field">
                 <label for="email">E-mail</label>
                 <input id="email" type="email" autocomplete="email" placeholder="voce@email.com" required />
               </div>
+
+              <div class="field">
+                <label for="perfil">Perfil</label>
+                <select id="perfil" required>
+                  <option value="">Selecione…</option>
+                  <option>Aluno (a)</option>
+                  <option>Professor (a)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label for="semestre">Semestre</label>
+                <select id="semestre" required></select>
+              </div>
+
               <div class="field">
                 <label for="periodo">Período</label>
                 <select id="periodo" required>
@@ -81,6 +129,11 @@
                   <option>Noite</option>
                 </select>
               </div>
+            </div>
+
+            <div class="field">
+              <label for="anoFormatura">Ano que irá se formar/Se formou</label>
+              <input id="anoFormatura" inputmode="numeric" pattern="\\d{4}" maxlength="4" placeholder="Ex.: 2027" required />
             </div>
 
             <div class="row">
@@ -117,140 +170,7 @@
 
   <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <!-- opcional: seu integration.js; não é obrigatório aqui -->
-  <!-- <script src="integration.js"></script> -->
-
-   <script>
-    // 🔗 URL do Web App (Apps Script) — COLE A SUA /exec
-    const API = "https://script.google.com/macros/s/AKfycbwGbJWIfovlaegsXKKsBJpImPL5ABvIhbIGUPcRJcu1TlwmhSgKFWHCNXSibcKDSfNxog/exec";
-
-    // lê código da URL (aceita ?c=... ou ?codigo=...)
-    const qs = new URLSearchParams(location.search);
-    const codigo = (qs.get('c') || qs.get('codigo') || '').trim() || 'SEM-CODIGO';
-    document.getElementById('pill').textContent = 'Código: ' + codigo;
-
-    const form = document.getElementById('form');
-    const msg = document.getElementById('msg');
-    const qrbox = document.getElementById('qrbox');
-    const btnBaixar = document.getElementById('btnBaixar');
-    const btnNovo = document.getElementById('btnNovo');
-    const btnLimpar = document.getElementById('btnLimpar');
-    const btnSubmit = document.querySelector('button[type="submit"]');
-    let lastPNG = null;
-
-    // 1) Carrega dados da palestra e habilita/desabilita botão
-    async function carregarPalestra() {
-      if (codigo === 'SEM-CODIGO') {
-        msg.innerHTML = '<span class="err">Inclua ?c=CODIGO na URL.</span>';
-        btnSubmit.disabled = true;
-        return;
-      }
-      try {
-        const r = await fetch(`${API}?codigo=${encodeURIComponent(codigo)}`);
-        const res = await r.json();
-        if (!res.ok) {
-          document.getElementById('eventTitle').textContent = 'Palestra não encontrada';
-          document.getElementById('eventDate').textContent  = '';
-          btnSubmit.disabled = true;
-          msg.innerHTML = '<span class="err">Código inválido na planilha.</span>';
-          return;
-        }
-        const p = res.palestra;
-        document.getElementById('eventTitle').textContent = p.descricao || 'Palestra';
-        document.getElementById('eventDate').textContent  = p.dataBR ? `Data: ${p.dataBR}` : '';
-        if (!p.ativo) {
-          btnSubmit.disabled = true;
-          msg.innerHTML = '<span class="err">Palestra inativa — geração de QR bloqueada.</span>';
-        } else {
-          btnSubmit.disabled = false;
-          msg.innerHTML = '<span class="ok">Palestra ativa — pode gerar o QR.</span>';
-        }
-      } catch (e) {
-        console.error(e);
-        btnSubmit.disabled = true;
-        msg.innerHTML = '<span class="err">Falha ao acessar a API.</span>';
-      }
-    }
-    carregarPalestra();
-
-    // 2) Ao submeter: REGISTRA na aba Convidados e depois gera o QR
-    form.addEventListener('submit', async (ev)=>{
-      ev.preventDefault();
-      if (btnSubmit.disabled) return;
-
-      const email = document.getElementById('email').value.trim();
-      const nome  = document.getElementById('nome').value.trim();
-      const periodo = document.getElementById('periodo').value;
-
-      if(!email || !codigo || !nome || !periodo){
-        msg.innerHTML = '<span class="err">Preencha todos os campos.</span>';
-        return;
-      }
-
-      // ⏳ feedback
-      msg.innerHTML = 'Registrando…';
-
-      try {
-        // Evita preflight: envia como x-www-form-urlencoded
-        const body = new URLSearchParams({
-          action: 'registrar',
-          codigoPalestra: codigo,
-          nome, email, periodo
-        }).toString();
-
-        const resp = await fetch(API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body
-        });
-        const data = await resp.json();
-
-        if (!data.ok) {
-          msg.innerHTML = `<span class="err">${data.error || 'Erro ao registrar'}</span>`;
-          return;
-        }
-
-        // Sucesso (novo ou existente): gera o QR
-        const conteudo = `${email}|${codigo}`;
-        qrbox.innerHTML = '';
-        const container = document.createElement('div');
-        qrbox.appendChild(container);
-
-        new QRCode(container, {
-          text: conteudo,
-          width: 250, height: 250,
-          correctLevel: QRCode.CorrectLevel.M
-        });
-
-        setTimeout(()=>{
-          const img = container.querySelector('img');
-          lastPNG = img ? img.src : null;
-          btnBaixar.disabled = !lastPNG;
-          btnNovo.disabled = false;
-          const statusTxt = data.status === 'existente' ? ' (já cadastrado)' : ' (novo)';
-          msg.innerHTML = `<span class="ok">QR gerado${statusTxt}: <b>${conteudo}</b></span>`;
-        }, 150);
-
-      } catch (e) {
-        console.error(e);
-        msg.innerHTML = '<span class="err">Erro ao registrar. Tente novamente.</span>';
-      }
-    });
-
-    btnBaixar.onclick = ()=>{
-      if(!lastPNG) return;
-      const a = document.createElement('a');
-      a.href = lastPNG;
-      a.download = 'qrcode.png';
-      a.click();
-    };
-
-    btnNovo.onclick = ()=>{
-      qrbox.innerHTML = '<div class="muted" style="text-align:center">Preencha o formulário e gere seu QR.</div>';
-      msg.textContent=''; btnBaixar.disabled=true; btnNovo.disabled=true;
-    };
-
-    btnLimpar.onclick = ()=>{ form.reset(); msg.textContent=''; document.getElementById('nome').focus(); };
-  </script>
+  <!-- sua lógica isolada -->
+  <script src="registerScript.js"></script>
 </body>
 </html>
