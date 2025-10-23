@@ -42,19 +42,8 @@ function preencherSemestres() {
   semestreSelect.appendChild(frag);
 }
 
-// Concatena Data (dd/MM/yyyy) + Horario (HH:mm) -> "Horário Palestra dd/MM/yyyy HH:mm"
-function montarHorarioPalestra(dataStr, horaStr) {
-  const d = (dataStr || "").trim();
-  const h = (horaStr || "").trim();
-  if (!d && !h) return "";
-  if (d && h) return `Horário Palestra ${d} ${h}`;
-  if (d) return `Horário Palestra ${d}`;
-  if (h) return `Horário Palestra ${h}`;
-  return "";
-}
-
 // ──────────────────────────────────────────────────────────────────────────────
-// Carrega dados do evento a partir da planilha
+// Carrega dados do evento a partir da planilha (sem parse de datas/horas)
 async function carregarPalestra() {
   if (codigo === "SEM-CODIGO") {
     msg.innerHTML = '<span class="err">Inclua ?c=CODIGO na URL.</span>';
@@ -75,12 +64,20 @@ async function carregarPalestra() {
     }
 
     const p = res.palestra || {};
+    // Título
     eventTitle.textContent = p.descricao || p.DESCRICAO || p.CodigoPalestra || "Palestra";
-    eventUniversity.textContent = p.Universidade ? `Universidade: ${p.Universidade}` : "";
 
-    const horarioFmt = montarHorarioPalestra(p.Data, p.Horario);
-    eventDate.textContent = horarioFmt;
+    // UNIVERSIDADE: UFPR
+    const uni = p.Universidade || p.UNIVERSIDADE || "";
+    eventUniversity.textContent = uni ? `UNIVERSIDADE: ${uni}` : "";
 
+    // Horario: 23/10/2025 12:00  (usa strings vindas da planilha/API)
+    const dataStr = p.Data || p.dataBR || p.data || "";
+    const horaStr = p.Horario || p.HORARIO || "";
+    const horarioLinha = [dataStr, horaStr].filter(Boolean).join(" ");
+    eventDate.textContent = horarioLinha ? `Horario: ${horarioLinha}` : "";
+
+    // Ativo (se não houver coluna, assume true)
     const ativo = (typeof p.ativo === "boolean")
       ? p.ativo
       : (p.ATIVO != null ? String(p.ATIVO).toLowerCase() === "true" : true);
@@ -100,7 +97,7 @@ async function carregarPalestra() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Envia todos os dados da inscrição
+// Envia TODOS os dados preenchidos na inscrição
 form.addEventListener("submit", async (ev) => {
   ev.preventDefault();
   if (btnSubmit.disabled) return;
@@ -112,9 +109,10 @@ form.addEventListener("submit", async (ev) => {
   const semestre = document.getElementById("semestre").value;
   const anoFormatura = document.getElementById("anoFormatura").value.trim();
 
-  const universidade = (eventUniversity.textContent || "").replace(/^Universidade:\s*/,'');
-  const dataPalestra = (eventDate.textContent || "").replace(/^Horário Palestra\s*/, '').split(' ')[0] || '';
-  const horarioPalestra = (eventDate.textContent || "").replace(/^Horário Palestra\s*/, '').split(' ')[1] || '';
+  // Extrai textos mostrados (sem parse)
+  const universidade = (eventUniversity.textContent || "").replace(/^UNIVERSIDADE:\s*/i, "");
+  const horarioTexto = (eventDate.textContent || "").replace(/^Horario:\s*/i, "");
+  const [dataPalestra, horaPalestra] = horarioTexto.split(" ");
 
   if (!email || !codigo || !nome || !periodo || !perfil || !semestre || !anoFormatura) {
     msg.innerHTML = '<span class="err">Preencha todos os campos.</span>';
@@ -128,7 +126,6 @@ form.addEventListener("submit", async (ev) => {
   msg.innerHTML = "Registrando…";
 
   try {
-    // envia TODOS os dados conforme colunas da planilha
     const body = new URLSearchParams({
       action: "registrar",
       CodigoPalestra: codigo,
@@ -139,8 +136,8 @@ form.addEventListener("submit", async (ev) => {
       Periodo: periodo,
       Semestre: semestre,
       AnoFormatura: anoFormatura,
-      Data: dataPalestra,
-      Horario: horarioPalestra
+      Data: dataPalestra || "",
+      Horario: horaPalestra || ""
     }).toString();
 
     const resp = await fetch(API, {
@@ -148,8 +145,8 @@ form.addEventListener("submit", async (ev) => {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body
     });
-
     const data = await resp.json();
+
     if (!data.ok) {
       msg.innerHTML = `<span class="err">${data.error || "Erro ao registrar"}</span>`;
       return;
