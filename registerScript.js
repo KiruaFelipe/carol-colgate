@@ -1,6 +1,6 @@
 // registerScript.js
 // 🔗 SUA URL /exec do Apps Script
-const API = "https://script.google.com/macros/s/AKfycbyrdhKxha2J5QDerL0h-beXu_BykQZ52sRYpd-ydgqGnJoTJCgp2aF2UDV_iRJ6TXVsqA/exec";
+const API = "https://script.google.com/macros/s/AKfycbzwGBCcZSqWVMXuPYYnH6sa77Uz12oWRipXfdUD-if5HCBiaiBGZ2FIfRMxayYYYXoiEA/exec";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Seletores / estado
