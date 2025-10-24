@@ -12,7 +12,7 @@ const form = document.getElementById("form");
 const msg = document.getElementById("msg");
 const qrbox = document.getElementById("qrbox");
 const btnBaixar = document.getElementById("btnBaixar");
-const btnNovo = document.getElementById("btnNovo");
+//const btnNovo = document.getElementById("btnNovo");
 const btnLimpar = document.getElementById("btnLimpar");
 const btnSubmit = document.getElementById("btnSubmit");
 
@@ -169,7 +169,7 @@ form.addEventListener("submit", async (ev) => {
       const img = container.querySelector("img");
       lastPNG = img ? img.src : null;
       btnBaixar.disabled = !lastPNG;
-      btnNovo.disabled = false;
+      //btnNovo.disabled = false;
       const statusTxt = data.status === "existente" ? " (já cadastrado)" : " (novo)";
       msg.innerHTML = `<span class="ok">QR gerado${statusTxt}: <b>${conteudo}</b></span>`;
     }, 150);
@@ -189,12 +189,12 @@ btnBaixar.onclick = () => {
   a.click();
 };
 
-btnNovo.onclick = () => {
-  qrbox.innerHTML = '<div class="muted" style="text-align:center">Preencha o formulário e gere seu QR.</div>';
-  msg.textContent = "";
-  btnBaixar.disabled = true;
-  btnNovo.disabled = true;
-};
+// btnNovo.onclick = () => {
+//   qrbox.innerHTML = '<div class="muted" style="text-align:center">Preencha o formulário e gere seu QR.</div>';
+//   msg.textContent = "";
+//   btnBaixar.disabled = true;
+//   btnNovo.disabled = true;
+// };
 
 btnLimpar.onclick = () => {
   form.reset();
