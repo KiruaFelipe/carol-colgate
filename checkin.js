@@ -1,13 +1,9 @@
-// checkin.js
-// 🔗 URL /exec do Apps Script
 const API = "https://script.google.com/macros/s/AKfycbyrdhKxha2J5QDerL0h-beXu_BykQZ52sRYpd-ydgqGnJoTJCgp2aF2UDV_iRJ6TXVsqA/exec";
 
-// Código da URL (?c=...)
 const qs = new URLSearchParams(location.search);
 const codigoUrl = (qs.get('c') || '').trim() || 'SEM-CODIGO';
 document.getElementById('pill').textContent = 'Código: ' + codigoUrl;
 
-// Seletores
 const video = document.getElementById('video');
 const startBtn = document.getElementById('start');
 const stopBtn  = document.getElementById('stop');
@@ -23,21 +19,18 @@ const btnConfirmar  = document.getElementById('btnConfirmar');
 const modalInfo  = document.getElementById('modalInfo');
 const toast      = document.getElementById('toast');
 
-// Estado
 let stream = null;
 let running = false;
 let modalOpen = false;
 let lastPayload = null;
 let scanningTimer = null;
-const SCAN_INTERVAL = 250;          // ms entre leituras
-const RESCAN_COOLDOWN_MS = 350;     // antiretrigger
+const SCAN_INTERVAL = 250;          
+const RESCAN_COOLDOWN_MS = 350;     
 let nextAllowedScanTs = 0;
 
-// Canvas para leitura do QR
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-// Utilidades UI
 function showToast(txt, ok = true, ms = 2000) {
   toast.style.background = ok ? '#0e9f6e' : '#dc2626';
   toast.textContent = txt;
@@ -56,7 +49,6 @@ function setConfirmBusy(busy) {
   }
 }
 
-// Modal
 function openModal(email, codigo){
   modalOpen = true;
   mEmail.textContent = email || '—';
@@ -64,7 +56,6 @@ function openModal(email, codigo){
   mTs.textContent = new Date().toLocaleString();
   modalBadge.textContent = 'Palestra: ' + (codigo || '—');
   modalInfo.textContent = '';
-  // Pausa somente a varredura — câmera continua aberta
   pauseScanning();
   backdrop.classList.add('show');
   backdrop.setAttribute('aria-hidden','false');
@@ -73,12 +64,11 @@ function closeModal(){
   modalOpen = false;
   backdrop.classList.remove('show');
   backdrop.setAttribute('aria-hidden','true');
-  lastPayload = null; // permite novo QR
+  lastPayload = null;
   nextAllowedScanTs = Date.now() + RESCAN_COOLDOWN_MS;
   resumeScanning();
 }
 
-// Scanner (intervalo)
 function startScanning(){
   if (scanningTimer) return;
   scanningTimer = setInterval(scanTick, SCAN_INTERVAL);
@@ -93,7 +83,6 @@ function stopScanning(){
   pauseScanning();
 }
 
-// Leitura de um frame
 function scanTick(){
   if (!running || modalOpen) return;
   if (Date.now() < nextAllowedScanTs) return;
@@ -131,13 +120,11 @@ function scanTick(){
   }
 }
 
-// Câmera
 async function startCam(){
   try{
     if (running) return;
     statusEl.textContent = 'Abrindo câmera…';
 
-    // reutiliza stream se possível
     const active = stream && stream.getTracks && stream.getTracks().some(t => t.readyState === 'live');
     if (!active) {
       stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } });
@@ -171,13 +158,11 @@ function stopCam(){
   statusEl.textContent = 'Parado.';
 }
 
-// Eventos básicos
 startBtn.onclick = startCam;
 stopBtn.onclick  = stopCam;
 backdrop.addEventListener('click',(e)=>{ if(e.target===backdrop) closeModal(); });
 window.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModal(); });
 
-// Visibilidade da aba (pausa/resume suave)
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     pauseScanning();
@@ -189,7 +174,6 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// Confirmar presença
 btnConfirmar.addEventListener('click', async ()=>{
   setConfirmBusy(true);
   modalInfo.textContent = 'Registrando presença…';
@@ -215,7 +199,7 @@ btnConfirmar.addEventListener('click', async ()=>{
     } else if (data.status === 'ja_confirmada') {
       modalInfo.innerHTML = `<span class="ok">Presença já estava confirmada ✓</span>`;
       showToast('Presença já confirmada anteriormente ✓', true, 3200);
-      setTimeout(closeModal, 2600); // ⏱ manter mais tempo visível
+      setTimeout(closeModal, 2600); 
     } else {
       modalInfo.innerHTML = `<span class="ok">Presença confirmada ✓</span>`;
       showToast('Presença confirmada ✓', true, 2400);
@@ -233,36 +217,46 @@ btnConfirmar.addEventListener('click', async ()=>{
 
 btnCancelar.addEventListener('click', closeModal);
 
-// Informações da palestra
 (async () => {
-  const titleEl = document.getElementById('eventTitle');
-  const dateEl  = document.getElementById('eventDate');
+  const elCodigo = document.getElementById('infoCodigo');
+  const elUni    = document.getElementById('infoUni');
+  const elHor    = document.getElementById('infoHorario');
+  const startBtn = document.getElementById('start');
+  const statusEl = document.getElementById('status');
 
   if (codigoUrl === 'SEM-CODIGO') {
-    titleEl.textContent = 'Código não informado';
+    elCodigo.textContent = '—';
+    elUni.textContent    = '—';
+    elHor.textContent    = '—';
     startBtn.disabled = true;
     statusEl.innerHTML = '<span class="err">Inclua ?c=CODIGO na URL.</span>';
     return;
   }
+
   try {
+    elCodigo.textContent = 'Carregando…';
+    elUni.textContent    = 'Carregando…';
+    elHor.textContent    = 'Carregando…';
+
     const r = await fetch(`${API}?codigo=${encodeURIComponent(codigoUrl)}`);
     const res = await r.json();
+
     if (!res.ok) throw new Error('Palestra não encontrada');
     if (!res.palestra.ativo) throw new Error('Palestra inativa');
 
-    titleEl.textContent = res.palestra.descricao || 'Palestra';
-    const dataStr = res.palestra.Data || '';
-    const horaStr = res.palestra.Horario || '';
-    dateEl.textContent  = (dataStr || horaStr) ? `Data/Horário: ${[dataStr, horaStr].filter(Boolean).join(' ')}` : '';
+    const p = res.palestra || {};
+    elCodigo.textContent = p.codigo || codigoUrl;
+    elUni.textContent    = p.Universidade || '—';
+    elHor.textContent    = `${p.Data || ''} ${p.Horario || ''}`.trim() || '—';
   } catch (e) {
-    titleEl.textContent = '—';
-    dateEl.textContent  = '';
+    elCodigo.textContent = codigoUrl;
+    elUni.textContent    = '—';
+    elHor.textContent    = '—';
     startBtn.disabled = true;
     statusEl.innerHTML = `<span class="err">${e.message}</span>`;
   }
 })();
 
-// Encerrar recursos ao sair
 window.addEventListener('beforeunload', () => {
   stopCam();
 });

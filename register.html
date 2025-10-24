@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cadastro — Palestra</title>
+  <title>Cadastro - Colgate Futuro Profissional</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -53,9 +53,9 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: url('./logo.jpg') no-repeat center center; /* mesmo arquivo do header */
+      background: url('./logo.jpg') no-repeat center center; 
       background-size: 60%;
-      opacity: 0.08;               /* ajuste fino da intensidade */
+      opacity: 0.08;               
       pointer-events: none;
       z-index: 0;
     }
@@ -141,11 +141,6 @@
               <button class="btn btn-ghost" type="button" id="btnLimpar">Limpar</button>
             </div>
             <div id="msg" class="status"></div>
-
-            <div class="note">
-              <span class="badge">Somente visual · sem salvar dados</span>
-              <span class="home-tip">Use <code>?c=ABC123</code> na URL para definir o código.</span>
-            </div>
           </form>
         </section>
 
@@ -157,20 +152,17 @@
               <small>O QR inclui: <b>email|codigo</b>.</small>
             </div>
           </div>
-          <div class="row" style="margin-top:12px">
-            <button class="btn" id="btnBaixar" type="button" disabled>Baixar imagem</button>
-            <button class="btn btn-ghost" id="btnNovo" type="button" disabled>Novo QR</button>
+          <div style="margin-top:12px">
+            <button class="btn" id="btnBaixar" type="button" disabled style="width:100%">Baixar imagem</button>
           </div>
         </section>
       </div>
     </main>
 
-    <footer>© Estudo Colgate — protótipo estático</footer>
+    <footer>© Colgate — Futuro Profissional</footer>
   </div>
 
-  <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <!-- sua lógica isolada -->
   <script src="registerScript.js"></script>
 </body>
 </html>

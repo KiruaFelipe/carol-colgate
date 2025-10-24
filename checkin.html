@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Leitor — Palestra</title>
+  <title>Leitor - Colgate Futuro Profissional</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -111,6 +111,12 @@
       box-shadow:0 10px 30px rgba(0,0,0,.25); font-weight:600; display:none; z-index:60;}
     .toast.show{display:block; animation:fadeIn .12s ease}
     .shake{animation:shake .25s}
+    footer {
+  padding: 22px 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
     @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-3px)}100%{transform:translateX(0)}}
   </style>
 </head>
@@ -127,14 +133,14 @@
     <!-- Card com informações da palestra -->
     <section class="card" id="infoCard">
       <h2>Informações da palestra</h2>
-      <div class="event">
-        <div class="dot"></div>
-        <div>
-          <div id="eventTitle" class="muted">Carregando…</div>
-          <div id="eventDate" class="muted" style="font-size:12px"></div>
-        </div>
+
+      <div style="display:grid; gap:8px; margin-top:6px">
+        <div><strong>Código:</strong> <span id="infoCodigo">Carregando…</span></div>
+        <div><strong>Universidade:</strong> <span id="infoUni">Carregando…</span></div>
+        <div><strong>Horário:</strong> <span id="infoHorario">Carregando…</span></div>
       </div>
     </section>
+
 
     <!-- Card da Câmera -->
     <section class="card" id="cameraCard">
@@ -171,10 +177,10 @@
     </div>
   </div>
 
-  <!-- Toast -->
   <div id="toast" class="toast"></div>
 
-  <!-- libs -->
+ <footer>© Colgate — Futuro Profissional</footer>
+
   <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
   <script src="checkin.js"></script>
 </body>
